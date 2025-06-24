@@ -1,17 +1,17 @@
 import { sdk } from "@farcaster/frame-sdk";
-import { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useAccount, useConnect, useSignMessage } from "wagmi";
 
 function App() {
   useEffect(() => {
-    sdk.actions.ready();
+    sdk.actions_ready();
   }, []);
 
   return (
-    <>
-      <div>Mini App + Vite + TS + React + Wagmi</div>
+    <div className="container">
+      <h1>🎮 Dragon Box: Tap to Claim</h1>
       <ConnectMenu />
-    </>
+    </div>
   );
 }
 
@@ -31,33 +31,30 @@ function ConnectMenu() {
 
   return (
     <button type="button" onClick={() => connect({ connector: connectors[0] })}>
-      Connect
+      Connect Wallet
     </button>
   );
 }
 
 function SignButton() {
   const { signMessage, isPending, data, error } = useSignMessage();
+  const [claimed, setClaimed] = useState(false);
+
+  const handleSign = () => {
+    signMessage({ message: "I want to claim the reward!" });
+    setClaimed(true);
+  };
+
+  if (claimed) {
+    return <div className="claimed">🎉 Successfully Claimed!</div>;
+  }
 
   return (
-    <>
-      <button type="button" onClick={() => signMessage({ message: "hello world" })} disabled={isPending}>
-        {isPending ? "Signing..." : "Sign message"}
-      </button>
-      {data && (
-        <>
-          <div>Signature</div>
-          <div>{data}</div>
-        </>
-      )}
-      {error && (
-        <>
-          <div>Error</div>
-          <div>{error.message}</div>
-        </>
-      )}
-    </>
+    <button type="button" onClick={handleSign} disabled={isPending}>
+      {isPending ? "Signing..." : "Tap to Claim"}
+    </button>
   );
 }
 
 export default App;
+
