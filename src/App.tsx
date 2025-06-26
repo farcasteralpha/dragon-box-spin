@@ -1,14 +1,12 @@
-import { NeynarProvider } from '@neynar/react-mini';
-import GameBox from './GameBox';
+import GameBox from "./GameBox";
 
-function App() {
+export default function App() {
   return (
-    <NeynarProvider>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-900 to-black text-white p-4">
       <GameBox />
-    </NeynarProvider>
+    </div>
   );
 }
 
-export default App;
 
 
