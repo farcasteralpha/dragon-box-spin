@@ -1,104 +1,69 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { useAccount, useConnect, useDisconnect, useContractWrite } from "wagmi";
-import { InjectedConnector } from "wagmi/connectors/injected";
-import { parseAbi } from "viem";
+import { degenClaimAbi } from "./abi/degenClaimAbi";
+import { useContractWrite } from "wagmi";
 
-const rewards = [
-  "Try Again",
-  "10 Points",
-  "Jackpot DEGEN!",
-  "5 Points",
-  "Try Again",
-  "50 Points",
-  "10 Points",
-  "Try Again",
-];
+const CONTRACT_ADDRESS = "0x5e6f2f46b5c7d89495be95208ebf4204af21f764";
+const CHAIN_ID = 8453; // Base Mainnet
 
-export default function GameBox() {
-  const [isSpinning, setIsSpinning] = useState(false);
-  const [reward, setReward] = useState<string | null>(null);
-
-  const { address, isConnected } = useAccount();
-  const { connect } = useConnect({ connector: new InjectedConnector() });
-  const { disconnect } = useDisconnect();
+const GameBox = () => {
+  const [reward, setReward] = useState("");
+  const [hasSpun, setHasSpun] = useState(false);
 
   const { writeContract, isPending } = useContractWrite();
 
-  const spin = () => {
-    if (isSpinning) return;
-    setIsSpinning(true);
-    setReward(null);
-    const resultIndex = Math.floor(Math.random() * rewards.length);
-    setTimeout(() => {
-      setIsSpinning(false);
-      setReward(rewards[resultIndex]);
-    }, 2000);
+  const spinBox = () => {
+    const prizes = ["Try Again", "Jackpot DEGEN!"];
+    const randomPrize = prizes[Math.floor(Math.random() * prizes.length)];
+    setReward(randomPrize);
+    setHasSpun(true);
+  };
+
+  const claimReward = () => {
+    if (reward === "Jackpot DEGEN!") {
+      writeContract({
+        abi: degenClaimAbi,
+        address: CONTRACT_ADDRESS,
+        functionName: "claim",
+        chainId: CHAIN_ID,
+      });
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-indigo-900 to-black text-white p-4">
-      {!isConnected ? (
+    <div className="text-center space-y-4">
+      {!hasSpun ? (
         <button
-          onClick={() => connect()}
-          className="mb-4 bg-gray-700 px-4 py-2 rounded-xl"
+          onClick={spinBox}
+          className="bg-purple-600 text-white py-2 px-6 rounded-xl hover:bg-purple-700"
         >
-          Connect Wallet
+          🎁 Tap to Spin
         </button>
       ) : (
-        <div className="mb-2 text-sm text-green-400">
-          Connected: {address?.slice(0, 6)}...{address?.slice(-4)}
-        </div>
-      )}
-
-      <motion.div
-        animate={{ rotate: isSpinning ? 720 : 0 }}
-        transition={{ duration: 2 }}
-        className="w-64 h-64 bg-yellow-400 text-black flex items-center justify-center rounded-2xl text-2xl font-bold shadow-xl mb-4"
-      >
-        {isSpinning ? "Spinning..." : reward ?? "🎁"}
-      </motion.div>
-
-      {!reward && (
-        <button
-          onClick={spin}
-          className="bg-pink-600 hover:bg-pink-700 px-6 py-2 rounded-xl font-semibold"
-        >
-          Spin to Win
-        </button>
-      )}
-
-      {reward && (
-        <div className="flex flex-col items-center gap-3">
-          <div className="text-xl font-semibold">{reward}</div>
-
-          {isConnected && (
+        <>
+          <div className="text-2xl">{reward}</div>
+          {reward === "Jackpot DEGEN!" && (
             <button
-              onClick={() =>
-                writeContract({
-                  address: "0x5e6f2f46b5c7d89495be95208ebf4204af21f764",
-                  abi: parseAbi(["function claim()"]),
-                  functionName: "claim",
-                  chainId: 8453, // Base Mainnet
-                })
-              }
+              onClick={claimReward}
+              className="bg-yellow-500 text-black py-2 px-6 rounded-xl hover:bg-yellow-600"
               disabled={isPending}
-              className="bg-blue-600 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-700"
             >
-              {isPending ? "Claiming..." : "Claim"}
+              {isPending ? "Claiming..." : "Claim Reward"}
             </button>
           )}
-
           <button
             onClick={() => {
-              setReward(null);
+              setHasSpun(false);
+              setReward("");
             }}
-            className="text-sm text-gray-300 underline mt-2"
+            className="bg-green-600 text-white py-2 px-4 rounded-lg mt-4"
           >
             Play Again
           </button>
-        </div>
+        </>
       )}
     </div>
   );
-}
+};
+
+export default GameBox;
+
